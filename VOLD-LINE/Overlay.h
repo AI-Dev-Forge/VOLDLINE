@@ -200,7 +200,7 @@ namespace OverlayInternal
 
     inline HWND previousWindow = nullptr;
     inline int  g_MenuToggleKey = VK_INSERT;
-    inline bool g_ShowMenu = false;
+    inline bool g_ShowMenu = true;
     inline bool g_ShouldExit = false;
     inline bool g_IsBindingKey = false;
 
@@ -230,6 +230,8 @@ namespace OverlayInternal
         wc.lpfnWndProc = WindowProc;
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.lpszClassName = L"VoldLineOverlayClass";
+        wc.hIcon = (HICON)LoadImageW(wc.hInstance, MAKEINTRESOURCEW(101), IMAGE_ICON, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_DEFAULTCOLOR);
+        wc.hIconSm = (HICON)LoadImageW(wc.hInstance, MAKEINTRESOURCEW(101), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
         RegisterClassExW(&wc);
 
         Vector2 screen = GetScreenSize();
@@ -237,16 +239,21 @@ namespace OverlayInternal
         // TOPMOST     = always on top of other windows
         // LAYERED     = allows transparency
         // TRANSPARENT = mouse clicks go through the window
-        // TOOLWINDOW  = hides it from the taskbar
+        // APPWINDOW   = shows on the taskbar with custom icon
         // NOACTIVATE  = prevents stealing focus and minimizing the game
         window = CreateWindowExW(
-            WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+            WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_APPWINDOW | WS_EX_NOACTIVATE,
             wc.lpszClassName, L"VOLD LINE", WS_POPUP,
             0, 0, (int)screen.x, (int)screen.y,
             nullptr, nullptr, wc.hInstance, nullptr);
 
         if (!window)
             return false;
+
+        HICON hBig = (HICON)LoadImageW(wc.hInstance, MAKEINTRESOURCEW(101), IMAGE_ICON, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_DEFAULTCOLOR);
+        HICON hSm = (HICON)LoadImageW(wc.hInstance, MAKEINTRESOURCEW(101), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
+        if (hBig) SendMessageW(window, WM_SETICON, ICON_BIG, (LPARAM)hBig);
+        if (hSm) SendMessageW(window, WM_SETICON, ICON_SMALL, (LPARAM)hSm);
 
         SetLayeredWindowAttributes(window, RGB(0, 0, 0), 255, LWA_ALPHA);
 
@@ -374,6 +381,9 @@ inline void RunOverlay(void (*drawFunction)(), void (*menuFunction)() = nullptr)
     ImGui::StyleColorsDark();
     ImGui_ImplWin32_Init(window);
     ImGui_ImplDX11_Init(device, context);
+
+    SetClickThrough(!g_ShowMenu);
+    if (g_ShowMenu) { SetWindowLongPtrW(window, GWL_EXSTYLE, GetWindowLongPtrW(window, GWL_EXSTYLE) & ~WS_EX_NOACTIVATE); SetActiveWindow(window); SetForegroundWindow(window); }
 
     bool running = true;
     bool menuKeyWasDown = false;

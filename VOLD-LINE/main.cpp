@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <vector>
 #include <cmath>
+#include <shobjidl.h>
+#pragma comment(lib, "shell32.lib")
 
 // =====================================================================
 //  CS2 Offsets (client.dll)
@@ -895,8 +897,11 @@ void MyDrawings()
 // =====================================================================
 //  Entry Point
 // =====================================================================
-int main()
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+	SetCurrentProcessExplicitAppUserModelID(L"AIDevForge.VoldLine.CS2");
+
+
 	std::cout << "===========================================" << std::endl;
 	std::cout << "                 VOLD LINE                 " << std::endl;
 	std::cout << "        Counter-Strike 2 ESP & Aimbot      " << std::endl;
