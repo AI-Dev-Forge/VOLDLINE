@@ -899,7 +899,7 @@ int main()
 {
 	std::cout << "===========================================" << std::endl;
 	std::cout << "                 VOLD LINE                 " << std::endl;
-	std::cout << "        Counter-Strike 2 ESP & Aimbot      " << std::endl;
+	std::cout << "        Counter Strike 2 ESP & Aimbot      " << std::endl;
 	std::cout << "===========================================" << std::endl;
 	std::cout << "Controls:" << std::endl;
 	std::cout << "  INSERT = Toggle Feature Menu" << std::endl;
