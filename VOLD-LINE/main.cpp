@@ -895,7 +895,7 @@ void MyDrawings()
 // =====================================================================
 //  Entry Point
 // =====================================================================
-int main()
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	std::cout << "===========================================" << std::endl;
 	std::cout << "                 VOLD LINE                 " << std::endl;
