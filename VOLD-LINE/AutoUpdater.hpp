@@ -13,7 +13,7 @@
 
 namespace AutoUpdater {
 	// Current application version (Semantic versioning: e.g. "1.0.1")
-	inline const std::string CURRENT_VERSION = "1.0.4";
+	inline const std::string CURRENT_VERSION = "1.0.0";
 	
 	// Target GitHub repository: "AI-Dev-Forge/VOLDLINE"
 	inline const std::string GITHUB_REPO = "AI-Dev-Forge/VOLDLINE";
