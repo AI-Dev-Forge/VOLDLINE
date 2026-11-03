@@ -121,6 +121,8 @@ struct AppConfig {
 	GeneralConfig   general;
 } g_Config;
 
+#include "ConfigManager.hpp"
+
 // =====================================================================
 //  CS2 Entity & Memory Helpers
 // =====================================================================
@@ -701,6 +703,17 @@ void RenderMenu()
 
 				ImGui::Spacing();
 				ImGui::Separator();
+				if (ImGui::Button("Save Settings", ImVec2(120, 28))) {
+					ConfigManager::Save(g_Config, OverlayInternal::g_MenuToggleKey);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Reset Defaults", ImVec2(120, 28))) {
+					g_Config = AppConfig();
+					OverlayInternal::g_MenuToggleKey = VK_INSERT;
+					ConfigManager::Save(g_Config, OverlayInternal::g_MenuToggleKey);
+				}
+
+				ImGui::Spacing();
 				if (ImGui::Button("Close Menu", ImVec2(120, 28))) {
 					OverlayInternal::SetMenuState(false);
 				}
@@ -908,6 +921,9 @@ int main()
 
 	AutoUpdater::CheckForUpdates();
 
+	// Load saved settings from settings.ini
+	ConfigManager::Load(g_Config, OverlayInternal::g_MenuToggleKey);
+
 	if (!mem.Attach(L"cs2.exe")) {
 		std::wcout << L"[!] CS2 is not currently running." << std::endl;
 		std::wcout << L"[*] Starting VOLD LINE overlay. Auto-connecting when CS2 launches." << std::endl;
@@ -917,5 +933,8 @@ int main()
 	}
 
 	RunOverlay(MyDrawings, RenderMenu);
+
+	// Automatically save latest settings on exit
+	ConfigManager::Save(g_Config, OverlayInternal::g_MenuToggleKey);
 	return 0;
 }
