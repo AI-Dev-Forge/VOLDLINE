@@ -12,10 +12,10 @@
 //  CS2 Offsets (client.dll)
 // =====================================================================
 namespace Offsets {
-	constexpr uintptr_t dwEntityList = 0x271EBA8;
-	constexpr uintptr_t dwViewMatrix = 0x256F250;
-	constexpr uintptr_t dwLocalPlayerPawn = 0x2569948;
-	constexpr uintptr_t dwViewAngles = 0x2580098;
+	constexpr uintptr_t dwEntityList = 0x271FBB8;
+	constexpr uintptr_t dwViewMatrix = 0x2570250;
+	constexpr uintptr_t dwLocalPlayerPawn = 0x256A948;
+	constexpr uintptr_t dwViewAngles = 0x2581098;
 
 	// CCSPlayerController
 	constexpr uintptr_t m_hPlayerPawn = 0x92C;
@@ -107,6 +107,8 @@ struct AimbotConfig {
 	float fovRadius = 80.0f;
 	float smoothing = 3.0f;
 	bool  requireKey = true; // Requires holding left mouse button to activate
+	bool  targetTeam = false; // false = Enemy Only, true = Include Team (Deathmatch)
+	int   targetBone = 0;     // 0 = Body (Chest/Neck), 1 = Head
 };
 
 struct GeneralConfig {
@@ -229,11 +231,23 @@ void RunAimbot(uintptr_t localPlayer, uint8_t localTeam)
 		if (!player || player == localPlayer || !IsPlayerAlive(player))
 			continue;
 
-		if (localTeam != 0 && GetPlayerTeam(player) == localTeam)
-			continue;
+		// Team Check (If targetTeam is false, skip teammates)
+		if (!g_Config.aimbot.targetTeam) {
+			if (localTeam != 0 && GetPlayerTeam(player) == localTeam)
+				continue;
+		}
 
 		Vector3 targetWorldPos = GetLocationOfPlayer(player);
-		targetWorldPos.z += 50.0f; // Target upper chest/neck area
+		
+		// Target Bone Selection (0 = Body/Chest, 1 = Head)
+		if (g_Config.aimbot.targetBone == 1) {
+			Vector3 viewOffset = mem.Read<Vector3>(player + Offsets::m_vecViewOffset);
+			float playerHeight = (viewOffset.z > 10.0f && viewOffset.z < 100.0f) ? (viewOffset.z + 3.0f) : 68.0f;
+			targetWorldPos.z += playerHeight; // Head Position
+		} else {
+			targetWorldPos.z += 50.0f; // Body / Upper Chest Position
+		}
+
 		Vector2 targetScreenPos;
 
 		if (WorldToScreen(targetWorldPos, targetScreenPos))
@@ -506,6 +520,14 @@ void RenderMenu()
 					ImGui::Checkbox("Show Field Of View (FOV Circle)", &g_Config.aimbot.showFov);
 					ImGui::Checkbox("Show Target Snap Line", &g_Config.aimbot.showTargetLine);
 					ImGui::Checkbox("Require Left Mouse Button (Hold to Aim)", &g_Config.aimbot.requireKey);
+					
+					ImGui::Spacing();
+					ImGui::Separator();
+					ImGui::TextDisabled("--- Target Settings ---");
+					ImGui::Checkbox("Include Teammates (Deathmatch)", &g_Config.aimbot.targetTeam);
+					
+					const char* boneOptions[] = { "Body (Chest)", "Head" };
+					ImGui::Combo("Target Bone", &g_Config.aimbot.targetBone, boneOptions, IM_ARRAYSIZE(boneOptions));
 
 					ImGui::Spacing();
 					ImGui::SliderFloat("Field Of View Radius", &g_Config.aimbot.fovRadius, 20.0f, 300.0f, "%.0f px");
