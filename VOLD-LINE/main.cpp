@@ -12,10 +12,10 @@
 //  CS2 Offsets (client.dll)
 // =====================================================================
 namespace Offsets {
-	constexpr uintptr_t dwEntityList = 0x2709010;
-	constexpr uintptr_t dwViewMatrix = 0x2559640;
-	constexpr uintptr_t dwLocalPlayerPawn = 0x2553D38;
-	constexpr uintptr_t dwViewAngles = 0x256A4B8;
+	constexpr uintptr_t dwEntityList = 0x270C680;
+	constexpr uintptr_t dwViewMatrix = 0x255CE50;
+	constexpr uintptr_t dwLocalPlayerPawn = 0x2557538;
+	constexpr uintptr_t dwViewAngles = 0x256D668;
 
 	// CCSPlayerController
 	constexpr uintptr_t m_hPlayerPawn = 0x92C;

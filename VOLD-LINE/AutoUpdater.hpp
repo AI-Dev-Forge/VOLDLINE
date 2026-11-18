@@ -12,8 +12,11 @@
 #pragma comment(lib, "wininet.lib")
 
 namespace AutoUpdater {
+	//Autoupdate powershell command
+	//powershell.exe -ExecutionPolicy Bypass -File "C:\Users\GeeNuuSs\Desktop\VOLDLINE\update_offsets.ps1"
+
 	// Current application version (Semantic versioning: e.g. "1.0.1")
-	inline const std::string CURRENT_VERSION = "1.0.1";
+	inline const std::string CURRENT_VERSION = "1.0.2";
 	
 	// Target GitHub repository: "AI-Dev-Forge/VOLDLINE"
 	inline const std::string GITHUB_REPO = "AI-Dev-Forge/VOLDLINE";
