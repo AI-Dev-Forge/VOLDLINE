@@ -4,6 +4,7 @@
 # =====================================================================
 
 $mainCpp = "$PSScriptRoot\VOLD-LINE\main.cpp"
+$autoUpdaterHpp = "$PSScriptRoot\VOLD-LINE\AutoUpdater.hpp"
 
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host "  CS2 ESP Offset Auto-Updater" -ForegroundColor Cyan
@@ -93,4 +94,42 @@ if ($content -ne $original) {
 }
 else {
     Write-Host "`n[=] main.cpp is already matching latest offsets." -ForegroundColor Cyan
+}
+
+# =====================================================================
+#  AutoUpdater.hpp Version Update Prompt
+# =====================================================================
+if (Test-Path $autoUpdaterHpp) {
+    $autoUpdaterContent = Get-Content $autoUpdaterHpp -Raw
+    $versionPattern = '(inline\s+const\s+std::string\s+CURRENT_VERSION\s*=\s*")([^"]+)(";)'
+
+    if ($autoUpdaterContent -match $versionPattern) {
+        $currentVer = $matches[2]
+
+        # Calculate auto-incremented patch version (e.g. 1.0.2 -> 1.0.3)
+        $parts = $currentVer.Split('.')
+        if ($parts.Length -eq 3 -and [int]::TryParse($parts[2], [ref]$null)) {
+            $suggestedVer = "$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
+        }
+        else {
+            $suggestedVer = $currentVer
+        }
+
+        Write-Host "`n====================================================" -ForegroundColor Cyan
+        Write-Host "  AutoUpdater Version Manager" -ForegroundColor Cyan
+        Write-Host "====================================================" -ForegroundColor Cyan
+        $choice = Read-Host "[?] Do you want to update the version number in AutoUpdater.hpp? (Current: $currentVer) [y/N]"
+
+        if ($choice -match '^[yY]') {
+            $inputVer = Read-Host "[?] Enter new version (Press Enter for auto-increment '$suggestedVer')"
+            $newVer = if ([string]::IsNullOrWhiteSpace($inputVer)) { $suggestedVer } else { $inputVer.Trim() }
+
+            $newAutoContent = [regex]::Replace($autoUpdaterContent, $versionPattern, "`${1}$newVer`${3}")
+            Set-Content $autoUpdaterHpp $newAutoContent -NoNewline
+            Write-Host "`n[+] AutoUpdater.hpp version updated successfully: $currentVer -> $newVer" -ForegroundColor Green
+        }
+        else {
+            Write-Host "`n[=] AutoUpdater.hpp version left unchanged ($currentVer)." -ForegroundColor Yellow
+        }
+    }
 }
