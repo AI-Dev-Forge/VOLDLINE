@@ -26,8 +26,12 @@
 <table>
   <tr>
     <td width="50%">
-      <h3>🎯 Aim Assist / Aimbot</h3>
+      <h3>🎯 Aim Assist & Triggerbot</h3>
       <ul>
+        <li><b>Auto-Fire / Triggerbot:</b> Automatically triggers left-click fire when the crosshair passes over a valid enemy hitbox.</li>
+        <li><b>Configurable Reaction Delay:</b> Humanized delay (ms) and burst click hold duration adjustments.</li>
+        <li><b>Trigger FOV Tolerance:</b> Pixel threshold margin to customize responsive trigger radius.</li>
+        <li><b>Activation Hotkey:</b> Run continuously or hold a dedicated hotkey (ALT, Shift, Mouse 4/5, etc.).</li>
         <li><b>Configurable FOV Circle:</b> Visual field-of-view display rendered dynamically on screen.</li>
         <li><b>Smooth Aiming Curves:</b> Adjustable smoothing coefficient for natural, humanized mouse movement.</li>
         <li><b>Target Snapline:</b> Visual indicators pointing directly toward the active prioritized target.</li>
@@ -92,6 +96,7 @@
 | <kbd>INSERT</kbd> *(Default)* | **Toggle Menu** | Show / Hide the interactive ImGui configuration GUI (Rebindable to any key) |
 | <kbd>END</kbd> | **Quick Exit** | Safely shutdown overlay, save settings, and exit application |
 | <kbd>Mouse 1 (Left Click)</kbd> | **Aim Assist** | Hold to smoothly track and lock onto nearest target in FOV (when Aimbot is enabled) |
+| <kbd>ALT</kbd> *(Optional)* | **Auto-Fire Trigger** | Hold to engage Triggerbot auto-firing when crosshair hovers enemies (Configurable) |
 
 ---
 
