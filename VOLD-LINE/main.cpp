@@ -111,6 +111,16 @@ struct AimbotConfig {
 	int   targetBone = 0;     // 0 = Body (Chest/Neck), 1 = Head
 };
 
+struct TriggerbotConfig {
+	bool  enabled = false;
+	float fov = 15.0f;        // Trigger distance in pixels from crosshair
+	int   delayMs = 20;       // Delay before firing (ms)
+	int   shotDurationMs = 30;// How long mouse is held down (ms)
+	bool  targetTeam = false; // false = Enemy Only, true = Include Team
+	bool  requireKey = false; // Require holding a key to enable triggerbot (e.g. ALT or MOUSE5)
+	int   hotkey = VK_MENU;   // Default: ALT key
+};
+
 struct GeneralConfig {
 	bool watermark = true;
 	bool showFPS = true;
@@ -120,6 +130,7 @@ struct AppConfig {
 	CrosshairConfig crosshair;
 	ESPConfig       esp;
 	AimbotConfig    aimbot;
+	TriggerbotConfig triggerbot;
 	GeneralConfig   general;
 } g_Config;
 
@@ -203,6 +214,97 @@ void MoveMouseRelative(int x, int y)
 	input.mi.dx = x;
 	input.mi.dy = y;
 	SendInput(1, &input, sizeof(INPUT));
+}
+
+void ClickMouseLeft(int holdDurationMs)
+{
+	INPUT down = { 0 };
+	down.type = INPUT_MOUSE;
+	down.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+	SendInput(1, &down, sizeof(INPUT));
+
+	if (holdDurationMs > 0)
+		std::this_thread::sleep_for(std::chrono::milliseconds(holdDurationMs));
+
+	INPUT up = { 0 };
+	up.type = INPUT_MOUSE;
+	up.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+	SendInput(1, &up, sizeof(INPUT));
+}
+
+void RunTriggerbot(uintptr_t localPlayer, uint8_t localTeam)
+{
+	if (!g_Config.triggerbot.enabled)
+		return;
+
+	if (g_Config.triggerbot.requireKey) {
+		if ((GetAsyncKeyState(g_Config.triggerbot.hotkey) & 0x8000) == 0)
+			return;
+	}
+
+	Vector2 screenSize = GetScreenSize();
+	float centerX = screenSize.x / 2.0f;
+	float centerY = screenSize.y / 2.0f;
+
+	bool targetHovered = false;
+
+	for (uint32_t i = 0; i < 64; i++)
+	{
+		uintptr_t player = GetPlayer(i);
+		if (!player || player == localPlayer || !IsPlayerAlive(player))
+			continue;
+
+		if (!g_Config.triggerbot.targetTeam) {
+			if (localTeam != 0 && GetPlayerTeam(player) == localTeam)
+				continue;
+		}
+
+		Vector3 feetPos = GetLocationOfPlayer(player);
+		Vector3 viewOffset = mem.Read<Vector3>(player + Offsets::m_vecViewOffset);
+		float playerHeight = (viewOffset.z > 10.0f && viewOffset.z < 100.0f) ? (viewOffset.z + 8.0f) : 72.0f;
+
+		Vector3 headPos = feetPos;
+		headPos.z += playerHeight;
+
+		Vector2 screenFeet{};
+		Vector2 screenHead{};
+		if (!WorldToScreen(feetPos, screenFeet) || !WorldToScreen(headPos, screenHead))
+			continue;
+
+		float boxHeight = screenFeet.y - screenHead.y;
+		if (boxHeight < 2.0f) continue;
+		float boxWidth = boxHeight / 2.2f;
+		float left = screenHead.x - boxWidth / 2.0f;
+		float right = screenHead.x + boxWidth / 2.0f;
+		float top = screenHead.y;
+		float bottom = screenFeet.y;
+
+		// Expand bounding hitbox slightly by trigger fov tolerance
+		float tol = g_Config.triggerbot.fov;
+		if (centerX >= (left - tol) && centerX <= (right + tol) &&
+			centerY >= (top - tol) && centerY <= (bottom + tol))
+		{
+			targetHovered = true;
+			break;
+		}
+	}
+
+	static auto lastShotTime = std::chrono::steady_clock::now();
+	auto now = std::chrono::steady_clock::now();
+
+	if (targetHovered)
+	{
+		auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastShotTime).count();
+		if (elapsed >= (g_Config.triggerbot.delayMs + g_Config.triggerbot.shotDurationMs + 50))
+		{
+			lastShotTime = now;
+			std::thread([delay = g_Config.triggerbot.delayMs, duration = g_Config.triggerbot.shotDurationMs]() {
+				if (delay > 0)
+					std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+				ClickMouseLeft(duration);
+			}).detach();
+		}
+	}
 }
 
 void RunAimbot(uintptr_t localPlayer, uint8_t localTeam)
@@ -538,7 +640,43 @@ void RenderMenu()
 				ImGui::EndTabItem();
 			}
 
-			// TAB 2: VISUALS (ESP)
+			// TAB: TRIGGERBOT (AUTO-FIRE)
+			if (ImGui::BeginTabItem("Auto-Fire"))
+			{
+				ImGui::Spacing();
+				ImGui::Checkbox("Enable Auto-Fire (Triggerbot)", &g_Config.triggerbot.enabled);
+				ImGui::Separator();
+
+				if (g_Config.triggerbot.enabled) {
+					ImGui::SliderFloat("Trigger Tolerance (FOV)", &g_Config.triggerbot.fov, 0.0f, 50.0f, "%.1f px");
+					ImGui::SliderInt("Reaction Delay (ms)", &g_Config.triggerbot.delayMs, 0, 300, "%d ms");
+					ImGui::SliderInt("Click Hold Duration (ms)", &g_Config.triggerbot.shotDurationMs, 10, 150, "%d ms");
+
+					ImGui::Spacing();
+					ImGui::Separator();
+					ImGui::Checkbox("Target Teammates (Deathmatch)", &g_Config.triggerbot.targetTeam);
+					ImGui::Checkbox("Require Activation Key", &g_Config.triggerbot.requireKey);
+
+					if (g_Config.triggerbot.requireKey) {
+						ImGui::Indent();
+						const char* trigKeyNames[] = { "ALT Key", "Left Shift", "Right Shift", "Left Ctrl", "Mouse 4", "Mouse 5", "SPACE" };
+						const int trigKeyValues[] = { VK_MENU, VK_LSHIFT, VK_RSHIFT, VK_LCONTROL, VK_XBUTTON1, VK_XBUTTON2, VK_SPACE };
+						static int trigKeyIndex = 0;
+						for (int i = 0; i < IM_ARRAYSIZE(trigKeyValues); ++i) {
+							if (trigKeyValues[i] == g_Config.triggerbot.hotkey) {
+								trigKeyIndex = i;
+								break;
+							}
+						}
+						if (ImGui::Combo("Activation Key", &trigKeyIndex, trigKeyNames, IM_ARRAYSIZE(trigKeyNames))) {
+							g_Config.triggerbot.hotkey = trigKeyValues[trigKeyIndex];
+						}
+						ImGui::Unindent();
+					}
+				}
+
+				ImGui::EndTabItem();
+			}
 			if (ImGui::BeginTabItem("Visuals (ESP)"))
 			{
 				ImGui::Spacing();
@@ -809,6 +947,9 @@ void MyDrawings()
 
 	// Execute Aimbot Logic
 	RunAimbot(localPlayer, localTeam);
+
+	// Execute Auto-Fire (Triggerbot) Logic
+	RunTriggerbot(localPlayer, localTeam);
 
 	if (!g_Config.esp.enabled)
 		return;

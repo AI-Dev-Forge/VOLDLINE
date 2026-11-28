@@ -132,6 +132,18 @@ namespace ConfigManager
             if (s.count("Smoothing")) cfg.aimbot.smoothing = ParseFloat(s["Smoothing"], cfg.aimbot.smoothing);
         }
 
+        // [Triggerbot]
+        if (ini.find("Triggerbot") != ini.end()) {
+            auto& s = ini["Triggerbot"];
+            if (s.count("Enabled")) cfg.triggerbot.enabled = ParseBool(s["Enabled"], cfg.triggerbot.enabled);
+            if (s.count("FOV")) cfg.triggerbot.fov = ParseFloat(s["FOV"], cfg.triggerbot.fov);
+            if (s.count("DelayMs")) cfg.triggerbot.delayMs = ParseInt(s["DelayMs"], cfg.triggerbot.delayMs);
+            if (s.count("ShotDurationMs")) cfg.triggerbot.shotDurationMs = ParseInt(s["ShotDurationMs"], cfg.triggerbot.shotDurationMs);
+            if (s.count("TargetTeam")) cfg.triggerbot.targetTeam = ParseBool(s["TargetTeam"], cfg.triggerbot.targetTeam);
+            if (s.count("RequireKey")) cfg.triggerbot.requireKey = ParseBool(s["RequireKey"], cfg.triggerbot.requireKey);
+            if (s.count("Hotkey")) cfg.triggerbot.hotkey = ParseInt(s["Hotkey"], cfg.triggerbot.hotkey);
+        }
+
         // [ESP]
         if (ini.find("ESP") != ini.end()) {
             auto& s = ini["ESP"];
@@ -205,6 +217,16 @@ namespace ConfigManager
         file << "RequireKey=" << (cfg.aimbot.requireKey ? "1" : "0") << "\n";
         file << "FOVRadius=" << cfg.aimbot.fovRadius << "\n";
         file << "Smoothing=" << cfg.aimbot.smoothing << "\n\n";
+
+        // [Triggerbot]
+        file << "[Triggerbot]\n";
+        file << "Enabled=" << (cfg.triggerbot.enabled ? "1" : "0") << "\n";
+        file << "FOV=" << cfg.triggerbot.fov << "\n";
+        file << "DelayMs=" << cfg.triggerbot.delayMs << "\n";
+        file << "ShotDurationMs=" << cfg.triggerbot.shotDurationMs << "\n";
+        file << "TargetTeam=" << (cfg.triggerbot.targetTeam ? "1" : "0") << "\n";
+        file << "RequireKey=" << (cfg.triggerbot.requireKey ? "1" : "0") << "\n";
+        file << "Hotkey=" << cfg.triggerbot.hotkey << "\n\n";
 
         // [ESP]
         file << "[ESP]\n";
